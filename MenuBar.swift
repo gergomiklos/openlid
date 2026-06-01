@@ -76,16 +76,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func refresh() {
         let awake = sleepDisabled()
-        let symbol = awake ? "bolt.fill" : "moon.zzz.fill"
-        if let img = NSImage(systemSymbolName: symbol,
-                             accessibilityDescription: awake ? "Awake" : "Can sleep") {
-            img.isTemplate = true
-            item.button?.image = img
-            item.button?.title = ""
-        } else {
-            item.button?.image = nil
-            item.button?.title = awake ? "AWAKE" : "zZ"
-        }
+        let img = NSImage(systemSymbolName: awake ? "bolt.fill" : "moon.zzz.fill",
+                          accessibilityDescription: awake ? "Awake" : "Can sleep")
+        img?.isTemplate = true
+        item.button?.image = img
         header.title = awake ? "Awake — safe to close the lid"
                              : "Will sleep if you close the lid"
         toggle.title = isEnabled() ? "Pause keep-awake" : "Resume keep-awake"
