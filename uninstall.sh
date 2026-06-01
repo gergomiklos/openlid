@@ -13,6 +13,7 @@ echo "Removing the system daemon (requires sudo)…"
 # Booting out triggers the daemon's cleanup, which restores normal sleep.
 sudo launchctl bootout system "$PLIST" 2>/dev/null || true
 sudo rm -f "$PLIST"
+sudo rm -rf "/Library/Application Support/NoSleepAgent"
 # Belt and suspenders: make sure sleep is re-enabled even if the daemon was gone.
 sudo pmset -a disablesleep 0 >/dev/null 2>&1 || true
 

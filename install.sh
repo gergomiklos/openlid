@@ -11,7 +11,14 @@ STATE_DIR="$HOME/.nosleepagent"
 ACTIVITY="$STATE_DIR/activity"
 ENABLED="$STATE_DIR/enabled"
 
-chmod +x "$DIR/nosleep.sh" "$DIR/ctl.sh" "$DIR/build.sh"
+# The daemon runs as root, so its executable and log must live where only root
+# can write — otherwise any local user could edit the script and get code run as
+# root. /Library/Application Support is root-owned and not user-writable.
+HELPER_DIR="/Library/Application Support/NoSleepAgent"
+HELPER="$HELPER_DIR/nosleep.sh"
+HELPER_LOG="$HELPER_DIR/nosleep.log"
+
+chmod +x "$DIR/ctl.sh" "$DIR/build.sh"
 
 # Build the menu bar indicator.
 "$DIR/build.sh"
@@ -105,6 +112,12 @@ echo "Menu bar indicator loaded ($MENU_LABEL)."
 # The daemon flips a root-only power setting (pmset disablesleep), so it must run
 # as root via a LaunchDaemon. Everything below this point needs sudo.
 echo "Installing the system daemon (requires sudo)…"
+
+# Copy the daemon into a root-owned location and run it from there (never from
+# the user-writable checkout). root:wheel + 755 means only root can modify it.
+sudo install -d -m 755 -o root -g wheel "$HELPER_DIR"
+sudo install -m 755 -o root -g wheel "$DIR/nosleep.sh" "$HELPER"
+
 TMP_PLIST="$(mktemp)"
 cat > "$TMP_PLIST" <<PLIST_EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -115,7 +128,7 @@ cat > "$TMP_PLIST" <<PLIST_EOF
     <string>$LABEL</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$DIR/nosleep.sh</string>
+        <string>$HELPER</string>
         <string>$ACTIVITY</string>
         <string>$ENABLED</string>
     </array>
@@ -124,9 +137,9 @@ cat > "$TMP_PLIST" <<PLIST_EOF
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>$DIR/nosleep.log</string>
+    <string>$HELPER_LOG</string>
     <key>StandardErrorPath</key>
-    <string>$DIR/nosleep.log</string>
+    <string>$HELPER_LOG</string>
 </dict>
 </plist>
 PLIST_EOF
@@ -140,6 +153,6 @@ sudo launchctl bootstrap system "$PLIST"
 
 echo "Installed and loaded ($LABEL)."
 echo "Status: sudo launchctl print system/$LABEL | grep state"
-echo "Logs:   $DIR/nosleep.log"
+echo "Logs:   $HELPER_LOG"
 echo "Restart any open Claude Code sessions so the new hooks take effect."
 echo "Codex: run /hooks in the Codex CLI and trust the new hooks."

@@ -65,7 +65,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                                 keyEquivalent: "q"))
         item.menu = menu
         refresh()
-        Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in self.refresh() }
+        // The daemon only changes state every ~30s (or on a user toggle, which
+        // we refresh immediately), so a relaxed poll keeps the icon fresh enough
+        // without spawning pmset constantly.
+        Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { _ in self.refresh() }
     }
 
     @objc func toggleSwitch() {
