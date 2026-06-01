@@ -12,7 +12,16 @@ call. A root daemon checks it every 30s:
 - active in the last 10 min → `pmset disablesleep 1` (stay awake, lid open or closed)
 - idle → `pmset disablesleep 0` (sleep normally)
 
-No UI, no state machine. Just a timestamp.
+A timestamp drives everything — no state machine.
+
+## Menu bar
+
+An icon shows the live state so you can check before closing the lid:
+
+- ⚡️ **Awake** — safe to close the lid, the job keeps running
+- 🌙 **Will sleep** — closing the lid now sleeps the Mac
+
+Click it to pause/resume keep-awake or quit.
 
 ## Install
 

@@ -11,7 +11,10 @@ STATE_DIR="$HOME/.nosleepagent"
 ACTIVITY="$STATE_DIR/activity"
 ENABLED="$STATE_DIR/enabled"
 
-chmod +x "$DIR/nosleep.sh" "$DIR/ctl.sh"
+chmod +x "$DIR/nosleep.sh" "$DIR/ctl.sh" "$DIR/build.sh"
+
+# Build the menu bar indicator.
+"$DIR/build.sh"
 
 # Seed the master switch ON. Don't seed the activity file: with no activity yet,
 # the daemon correctly starts in the "let it sleep" state.
@@ -69,6 +72,35 @@ allowed-tools: Bash($DIR/ctl.sh:*)
 
 The NoSleepAgent switch has been updated (see output above). Confirm the new state in one short line; no other action needed.
 CMD_EOF
+
+# Menu bar indicator (user agent, no sudo): shows whether it's safe to close the
+# lid right now, and lets you pause/resume keep-awake.
+MENU_LABEL="com.nosleepagent.menubar"
+MENU_PLIST="$HOME/Library/LaunchAgents/$MENU_LABEL.plist"
+mkdir -p "$HOME/Library/LaunchAgents"
+cat > "$MENU_PLIST" <<MENU_EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>$MENU_LABEL</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$DIR/bin/nosleep-menubar</string>
+        <string>$DIR/ctl.sh</string>
+        <string>$ENABLED</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+MENU_EOF
+launchctl bootout "gui/$(id -u)/$MENU_LABEL" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$MENU_PLIST"
+echo "Menu bar indicator loaded ($MENU_LABEL)."
 
 # The daemon flips a root-only power setting (pmset disablesleep), so it must run
 # as root via a LaunchDaemon. Everything below this point needs sudo.

@@ -2,6 +2,12 @@
 set -euo pipefail
 LABEL="com.nosleepagent.daemon"
 PLIST="/Library/LaunchDaemons/$LABEL.plist"
+MENU_LABEL="com.nosleepagent.menubar"
+MENU_PLIST="$HOME/Library/LaunchAgents/$MENU_LABEL.plist"
+
+# Menu bar indicator (user agent, no sudo).
+launchctl bootout "gui/$(id -u)/$MENU_LABEL" 2>/dev/null || true
+rm -f "$MENU_PLIST"
 
 echo "Removing the system daemon (requires sudo)…"
 # Booting out triggers the daemon's cleanup, which restores normal sleep.
